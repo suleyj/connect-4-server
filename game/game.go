@@ -4,47 +4,82 @@ import (
 	"github.com/suleyj/connect-4-server/board"
 )
 
-type increment struct {
-	x, y int
+type point struct {
+	x int
+	y int
 }
 
-func IsWin(g board.GameBoard, row, column int, val rune) bool {
-	increments := []increment{
-		{0, 1},
-		{0, -1},
-		{1, 0},
-		{-1, 0},
-		{1, 1},
-		{1, -1},
-		{-1, 1},
-		{-1, -1},
+type adjacentDirections struct {
+	first  string
+	second string
+}
+
+func IsWin(g board.GameBoard, row, column int, playerVal rune) bool {
+
+	directionPoints := map[string]point{
+		"down":              {0, -1},
+		"up":                {0, 1},
+		"left":              {-1, 0},
+		"right":             {1, 0},
+		"diagonalUpRight":   {1, 1},
+		"diagonalDownLeft":  {-1, -1},
+		"diagonalUpLeft":    {-1, 1},
+		"diagonalDownRight": {1, -1},
 	}
 
-	for _, increment := range increments {
-		win := true
-		for i := 1; i < 4; i++ {
-			if row+(increment.x*i) > g.Rows-1 || row+(increment.x*i) < 0 {
-				win = false
-				break
-			}
+	pairedDirections := []adjacentDirections{
+		{"down", "up"},
+		{"left", "right"},
+		{"diagonalUpRight", "diagonalDownLeft"},
+		{"diagonalUpLeft", "diagonalDownRight"},
+	}
 
-			if column+(increment.y*i) > g.Columns-1 || column+(increment.y*i) < 0 {
-				win = false
-				break
-			}
+	for _, pair := range pairedDirections {
+		chipCount := 1
+		chipCount += countChips(g, row, column, directionPoints[pair.first], playerVal)
+		chipCount += countChips(g, row, column, directionPoints[pair.second], playerVal)
 
-			if g.Board[row+(increment.x*i)][column+(increment.y*i)] != val {
-				win = false
-				break
-			}
-
-		}
-
-		if win {
+		if chipCount >= 4 {
 			return true
 		}
-
 	}
 
 	return false
+
+}
+
+func outOfBounds(index int, size int) bool {
+
+	if index > size-1 || index < 0 {
+		return true
+	}
+
+	return false
+}
+
+// counts the number of matching chips in a given direction
+func countChips(g board.GameBoard, row int, column int, p point, playerVal rune) int {
+	chipCount := 0
+	for i := 1; ; i++ {
+		columnDirection := column + (p.x * i)
+		rowDirection := row + (p.y * i)
+
+		if outOfBounds(columnDirection, g.Columns) {
+			break
+		}
+
+		if outOfBounds(rowDirection, g.Rows) {
+			break
+		}
+
+		if g.Board[rowDirection][columnDirection] != playerVal {
+			break
+		}
+
+		if g.Board[rowDirection][columnDirection] == playerVal {
+			chipCount += 1
+		}
+	}
+
+	return chipCount
 }
