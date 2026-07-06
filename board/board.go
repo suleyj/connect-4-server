@@ -2,7 +2,6 @@ package board
 
 import (
 	"errors"
-	"fmt"
 )
 
 type GameBoard struct {

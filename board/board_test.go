@@ -27,7 +27,7 @@ func TestPlaceOnBoard(t *testing.T){
 	gameBoard := GameBoard{}
 	gameBoard.CreateBoard()
 
-	gameBoard.PlaceOnBoard(0, 'R')
+	gameBoard.PlaceOnBoard(1, 'R')
 
 	if gameBoard.Board[5][0] != 'R' {
 		t.Error("Place on board error")
