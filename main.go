@@ -2,10 +2,12 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"strings"
 
 	tea "charm.land/bubbletea/v2"
+	"github.com/joho/godotenv"
 	"github.com/suleyj/connect-4-server/board"
 	"github.com/suleyj/connect-4-server/game"
 )
