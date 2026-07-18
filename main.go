@@ -19,9 +19,12 @@ type model struct {
 	cursor        int
 	p1            player
 	p2            player
-	gb            board.GameBoard
+	board         board.GameBoard
 	isPlayer1Turn bool
 	win           bool
+	err           error
+	winner        player
+	draw          bool
 }
 
 func initialModel() model {
@@ -32,9 +35,8 @@ func initialModel() model {
 		cursor:        0,
 		p1:            player{'X', "Player 1"},
 		p2:            player{'Y', "Player 2"},
-		gb:            gameBoard,
+		board:         gameBoard,
 		isPlayer1Turn: true,
-		win:           false,
 	}
 }
 
