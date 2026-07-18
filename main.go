@@ -51,30 +51,46 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "ctrl+c", "q":
 			return m, tea.Quit
 		case "left", "h":
-			if m.cursor > 0 {
+			if m.cursor == 0 {
+				m.cursor = m.board.Columns - 1
+			} else if m.cursor > 0 {
 				m.cursor--
 			}
+			log.Printf("Cursor: %d\n", m.cursor)
 		case "right", "l":
-			if m.cursor < m.gb.Columns-1 {
+			if m.cursor == m.board.Columns-1 {
+				m.cursor = 0
+			} else if m.cursor < m.board.Columns-1 {
 				m.cursor++
 			}
 		case "enter", "space":
+			m.err = nil
 			var playerVal rune
 			if m.isPlayer1Turn {
 				playerVal = m.p1.playerValue
 			} else {
 				playerVal = m.p2.playerValue
 			}
-			row, col, err := m.gb.PlaceOnBoard(m.cursor+1, playerVal)
+			row, col, err := m.board.PlaceOnBoard(m.cursor+1, playerVal)
 			if err != nil {
-				fmt.Println(err)
+				m.err = err
+				break
 			}
-			if game.IsWin(m.gb, row, col, playerVal) {
+			if game.IsWin(m.board, row, col, playerVal) {
 				m.win = true
+				if playerVal == m.p1.playerValue {
+					m.winner = m.p1
+				} else {
+					m.winner = m.p2
+				}
+				return m, tea.Quit
+			} else if game.IsDraw(m.board) {
+				m.draw = true
 				return m, tea.Quit
 			} else {
 				m.isPlayer1Turn = !m.isPlayer1Turn
 			}
+
 			m.cursor = 0
 		}
 	}
@@ -95,33 +111,43 @@ func (m model) View() tea.View {
 
 	s += currentPlayer.playerName + "'s turn\n\n"
 
-	renderedCursor := false
+	// cursorRendered := false
 
-	// for i := m.gb.Rows - 1; i >= 0; i-- {
-	for i := range m.gb.Rows {
-		for k := range m.gb.Columns {
-			if !m.win && k == m.cursor && (i+1 > m.gb.Rows-1 || m.gb.Board[i+1][k] != ' ') && renderedCursor == false {
-				s += fmt.Sprintf("| %c ", currentPlayer.playerValue)
-				renderedCursor = true
-			} else {
-				s += fmt.Sprintf("| %c ", m.gb.Board[i][k])
-			}
+	if !m.win {
+		s += fmt.Sprintf(strings.Repeat("    ", m.cursor)+"  %c  \n", currentPlayer.playerValue)
+	} else {
+		s += "\n"
+	}
+
+	for i := range m.board.Rows {
+		for k := range m.board.Columns {
+			s += fmt.Sprintf("| %c ", m.board.Board[i][k])
 		}
 		s += fmt.Sprintln("|")
 	}
 
-	dashes := strings.Repeat("----", 7)
+	dashes := strings.Repeat("----", m.board.Columns)
 	s += fmt.Sprintf("%s-\n", dashes)
 
 	s += "\nPress q to quit.\n"
-
+	if m.err != nil {
+		s += "\n" + m.err.Error() + "\n"
+	}
 	v := tea.NewView(s)
-	v.WindowTitle = "Grocery List"
+	v.WindowTitle = "Connect 4"
 
 	return v
 }
 
 func main() {
+	godotenv.Load()
+	logfilePath := os.Getenv("BUBBLETEA_LOG")
+	if logfilePath != "" {
+		if _, err := tea.LogToFile(logfilePath, "simple"); err != nil {
+			log.Fatal(err)
+		}
+	}
+
 	p := tea.NewProgram(initialModel())
 	finalModel, err := p.Run()
 	if err != nil {
@@ -130,15 +156,11 @@ func main() {
 	}
 	m := finalModel.(model)
 
-	var winner player
-
-	if m.isPlayer1Turn {
-		winner = m.p1
-	} else {
-		winner = m.p2
+	if m.win {
+		fmt.Println("\n" + m.winner.playerName + " is the winner \n")
 	}
 
-	if m.win {
-		fmt.Println("\n" + winner.playerName + " is the winner")
+	if m.draw {
+		fmt.Println("\nThis game is a draw")
 	}
 }
