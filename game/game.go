@@ -1,6 +1,8 @@
 package game
 
 import (
+	"slices"
+
 	"github.com/suleyj/connect-4-server/board"
 )
 
@@ -12,6 +14,16 @@ type point struct {
 type adjacentDirections struct {
 	first  string
 	second string
+}
+
+func IsDraw(g board.GameBoard) bool {
+	for _, row := range g.Board {
+		if slices.Contains(row, ' ') {
+				return false
+		}	
+	}
+
+	return true
 }
 
 func IsWin(g board.GameBoard, row, column int, playerVal rune) bool {
